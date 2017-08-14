@@ -40,19 +40,20 @@ class Helper:
         is_en = sum(is_en_arr) / float(len(is_en_arr)) > .5
         return is_en
 
-    def prepare_author_df(self, csv_file, min_num_pub=2, max_num_pub=100, row_num=None):
+    def prepare_author_df(self, csv_file, min_num_pub=3, max_num_pub=100, data_portion=None):
         '''
         reads the csv file, and for each author creates one doc captaining all papers titles concatenated 
         :param csv_file: csv file with each raw containnig one author and one title. 
                Multiple row may refer to one publication.
         :param min_num_pub: lower bound for number of publication to consider an author
         :param max_num_pub: upper bound for number of publication to consider an author
-        :param row_num: total rows to consider from the read csv file
+        :param data_portion: total rows to consider from the read csv file
         :return: 
         '''
-        dblp_df = pd.read_csv(csv_file).head(row_num)
-        if row_num:
-            dblp_df = dblp_df.head(row_num)
+        dblp_df = pd.read_csv(csv_file)
+        if data_portion:
+            print ('using ', int(len(dblp_df)*data_portion), ' of data.')
+            dblp_df = dblp_df.head(int(len(dblp_df)*data_portion))
         # remove documents which are not in English
         print('Filtering out non-English articles...')
         dblp_en_df = dblp_df[dblp_df['title'].apply(self.is_english)]
@@ -72,14 +73,18 @@ class Helper:
 
         # Preprocessing the documents
         print('Preprocessing documents (removing stop words, punctuations, and lemmatizing)...')
-        docs = author_df['doc'].apply(self.preprocess_text)
-        doc_list = [t.split() for t in docs]
-        print ('Total number of processed documents: ', len(doc_list))
+        author_df['doc'] = author_df['doc'].apply(self.preprocess_text)
 
-        del author_df
+        if data_portion:
+            csv_name = '../data/{}-authors_processed.csv'.format(data_portion)
+        else:
+            csv_name = '../data/authors_processed.csv'
+        author_df.to_csv(csv_name, index=False)
+
+
         del dblp_df
         del dblp_en_df
 
-        return doc_list
+        return author_df
 
 
