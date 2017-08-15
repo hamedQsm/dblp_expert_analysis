@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from scipy.stats import entropy
 from sklearn.neighbors import NearestNeighbors
 from wordcloud import WordCloud
+import numpy as np
 
 from Helper import Helper
 from models.LDAModel import LDAModel
@@ -20,7 +21,7 @@ def jansen_shanon_div(P, Q):
     return 0.5 * (entropy(_P, _M) + entropy(_Q, _M))
 
 
-test_authors = ['Hamed Ghasemieh'] #, 'Anne Remke', 'Boudewijn R. Haverkort']
+test_authors = ['Hamed Ghasemieh', 'Anne Remke', 'Boudewijn R. Haverkort']
 
 
 def assess_model(model, model_name, distance_metric, data_portion=.7, load_pickles=True,
@@ -49,7 +50,7 @@ def assess_model(model, model_name, distance_metric, data_portion=.7, load_pickl
         pickle.dump(X, open('{}/objects/{}-transferred_docs.pickle'.format(root_folder, model_name), "wb"))
 
         print('Training the nearest neighbor...')
-        nbrs = NearestNeighbors(n_neighbors=20, algorithm='ball_tree', metric=distance_metric).fit(X)
+        nbrs = NearestNeighbors(n_neighbors=20, algorithm='brute', metric=distance_metric).fit(X)
         pickle.dump(nbrs, open('{}/objects/{}-nbrs-balltree.pickle'.format(root_folder, model_name), "wb"))
     else:
         # Loading the pickle in case we have already transformed the data.
@@ -62,19 +63,22 @@ def assess_model(model, model_name, distance_metric, data_portion=.7, load_pickl
     doc_list = [(helper.preprocess_text(p).split()) for p in query_authors['doc']]
 
     q = model.transform(doc_list)
-    distances, indices = nbrs.kneighbors(q)
+    # distances, indices = nbrs.kneighbors(q)
 
-    # NOTE: Here I am assuming that the csv file read is the one for which the NN is trained.
-    # Otherwise indices will not match.
+    # NOTE 1: Here I am assuming that the csv file read is the one for which the NN is trained. Otherwise indices
+    # will not match.
+    # NOTE 2: During my trial and error with KNN I, strangely, figured it I pass batch of queries,
+    # their relation affects the result. Therefore now I doe the process separately.
     for i, a in enumerate(test_authors):
+        distances, indices = nbrs.kneighbors(q[i])
         print('Suggestion for ', a, ': ')
-        print(author_df.loc[indices[i]])
+        print(author_df.loc[indices[0]])
 
         if not os.path.exists(a):
             os.mkdir(a)
 
-        plt.figure(figsize=(24, 20))
-        for rank, idx in enumerate(indices[i]):
+        plt.figure(figsize=(26, 20))
+        for rank, idx in enumerate(indices[0]):
             name = author_df.loc[idx]['author']
             text = author_df.loc[idx]['doc']
             wordcloud = WordCloud(background_color="white",
@@ -83,8 +87,8 @@ def assess_model(model, model_name, distance_metric, data_portion=.7, load_pickl
             plt.subplot(5, 4, rank+1)
             plt.imshow(wordcloud, interpolation='bilinear')
             plt.axis("off")
-            plt.title(name + '(rank: ' + str(rank + 1) + ')', fontsize=25)
-            plt.tight_layout()
+            plt.title(name + '(' + str(rank + 1) + ', ' + str(np.round(distances[0][rank], 2)) + ')', fontsize=23)
+            # plt.tight_layout()
             # plt.savefig(os.path.join(a, str(rank) + '_' + name + '.png'))
         plt.savefig(a + '_' + model_name + '_sim.png')
 
@@ -99,4 +103,4 @@ def check_w2v_model(root_folder):
     w2v_model = Word2vecModel()
     w2v_model.initialize("{}/data/glove.6B/glove.6B.50d.txt".format(root_folder))
 
-    assess_model(w2v_model, 'w2v', distance_metric='cosine', load_pickles=False, root_folder=root_folder)
+    assess_model(w2v_model, 'w2v', distance_metric='cosine', load_pickles=True, root_folder=root_folder)
