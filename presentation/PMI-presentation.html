@@ -1,0 +1,397 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/solarized.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h2>Extracting Expertise Areas from DBLP Data Base</h2>
+					<!-- <h4>Hamed Ghaemieh</h4> -->
+					<p>
+						Hamed Ghasemieh
+					</p>
+				</section>
+				<section>
+					<h2>Outline</h2>
+					<ul>
+						<li>Reading the data</li>
+						<li>Preprocessing</li>
+						<li>Topic modeling</li>
+						<li>Matching expertis with whom who seeks it!</li>
+					</ul>
+				</section>
+
+				<section>
+					<section>
+						<h2>Reading the data </h2>
+						<h2><span class="fragment">(on my small old laptop)</span></h2>
+					</section>
+					<section>
+					<h2>DBLP XML file</h2>
+					<pre><code class="xml" data-trim contenteditable>
+						<article mdate="2017-05-28" key="journals/acta/BozapalidisFR12">
+							<author>Symeon Bozapalidis</author>
+							<author>Zolt&aacute;n F&uuml;l&ouml;p 0001</author>
+							<author>George Rahonis</author>
+							<title>Equational weighted tree transformations.</title>
+							<pages>29-52</pages>
+							<year>2012</year>
+							<volume>49</volume>
+							<journal>Acta Inf.</journal>
+							<number>1</number>
+							<ee>https://doi.org/10.1007/s00236-011-0148-5</ee>
+							<url>db/journals/acta/acta49.html#BozapalidisFR12</url>
+						</article>
+					</code></pre>
+					</section>
+					<section>
+						<pre width="100%" ><code class="python" data-trim contenteditable>
+							from lxml import etree
+							context = etree.iterparse(dblp_xml_file, load_dtd=True, 
+													  html=True)
+							for _, elem in context:
+					            if elem.tag in extract_fields:
+					                doc_dic[elem.tag] = elem.text
+					            if elem.tag == 'author':
+					                doc_dic['author'].append(elem.text)
+					            # if this condition as satisfied then 
+					            # one document is read completely
+					            if elem.tag in document_types:
+					            	# Store the document.
+						</code></pre>
+
+						<font size="6">
+						<ul>
+						<li>Does not load the entire file in memory</li>
+						<li>The results can be written in csv chuncks and merged later</li>
+						</ul>
+						</font>
+					</section>
+					<section>
+					<h3>Resulting pandas data frame</h3>
+					<font size="6">
+					<table>
+						<thead>
+							<tr>
+								<th>Title</th>
+								<th>Author</th>
+								<th>Year</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Hybrid Petri nets with multiple stochastic transition firings</td>
+								<td>Hamed Ghasemieh</td>
+								<td>2014</td>
+							</tr>
+							<tr>
+								<td>Hybrid Petri nets with multiple stochastic transition firings</td>
+								<td>Anne Remke</td>
+								<td>2014</td>
+							</tr>
+							<tr>
+								<td>Hybrid Petri nets with multiple stochastic transition firings</td>
+								<td>Boudewijn R Haverkort</td>
+								<td>2014</td>
+							</tr>
+						</tbody>
+					</table>
+					</font>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Preprocessing</h2>
+						<ol>
+							<li>Removing the stop words (the, a, is, as, ...)</li>
+							<li>Removing punctuation</li>
+							<li>Lemmatizing </li>
+								<ul>
+									<li>am, is, are --> be</li>
+									<li>book, books, book's --> book</li>
+								</ul>
+							<li>Removing non-English pulications</li>
+						</ol>
+					</section>
+					<section>
+						<p>Using <b>nltk</b> for the first three steps: </p>
+						<pre width="100%" ><code class="python" data-trim contenteditable>
+							from nltk.corpus import stopwords
+							from nltk.stem.wordnet import WordNetLemmatizer
+
+							stopwords_removed = ' '.join([
+								i for i in str(text).lower().split() 
+								if i not in stopwords
+								])
+							punct_removed = ''.join(
+								i for i in stopwords_removed 
+								if i not in set(string.punctuation
+								))
+							lemmatized = " ".join(
+								WordNetLemmatizer().lemmatize(i) 
+								for i in punct_removed.split()
+								)
+					    </code></pre>
+					  
+					</section>  	
+					<section>
+						<p>Using <b>enchant</b> package detemining the language: </p>
+					    <pre width="100%" ><code class="python" data-trim contenteditable>
+							import enchant
+
+							english_dic = enchant.Dict("en_US")
+
+							is_en_arr = [int(english_dic.check(w)) 
+										for w in str(text).split()]
+							is_en = sum(is_en_arr) / float(len(is_en_arr)) > .5
+					    </code></pre>
+						
+					</section>
+				</section>
+
+				
+				<section>
+					<h2>Topic Modeling</h2>
+					<ul>
+						<li>Latent Dirichlet Allocation (LDA)</li>
+						<li>Word2Vec</li>
+					</ul>
+				</section>
+				<section>
+					<section>
+						<h3>Latent Dirichlet Allocation</h3>
+						<P>Generative model</P>>
+						<img width="1200"  src="imgs/gen-model.png" alt="Smiley face">
+					</section>
+					<section>
+						<h3>Latent Dirichlet Allocation</h3>
+						<P>Posterior Distribution</P>
+						<img width="1200"  src="imgs/posterior.png" alt="Smiley face">
+					</section>
+					<section>
+						<h3>Latent Dirichlet Allocation</h3>
+						<font size="6">
+						<ul>
+							<li>LDA for each document gives us a distribution over topics</li>								
+								<p style="margin-left:2em; fontsize=13px"> 
+								<font size="6">(Number of topic is an input to the algorithm)</font>
+								</p>
+							<li>I use this as a feature vector being used later for computing a distance metric between two documents</li>
+							<li>Therefore I can use conventianal unsupervised segmentation techniques  </li>
+						</ul>
+						</font>
+					</section>
+					<section>
+						<p>Using <b>gensim</b> to train LDA model: </p>
+					    <pre width="100%" ><code class="python" data-trim contenteditable>
+							import gensim
+							from gensim import corpora
+
+							dictionary = corpora.Dictionary(doc_list)
+							corpus = [dictionary.doc2bow(doc) for doc in doc_list]
+							ldamodel = gensim.models.ldamodel.LdaModel(
+									   corpus, 
+									   num_topics=50, 
+									   id2word=dictionary, 
+									   passes=10)
+					    </code></pre>
+						
+					</section>
+					<section>
+						<p>Trasfering new document to topic space:</p>
+					    <pre width="100%" ><code class="python" data-trim contenteditable>					    	
+							topic_prob_vec = ldamodel[dictionary.doc2bow(doc)]
+							for (t_id, p) in topic_prob_vec:
+								topic_vec[i, t_id] = p
+					    </code></pre>
+						
+					</section>
+					<section>
+						<h5>Visualization for 50 topics</h5>
+						<object width=1200 height=900 type="text/html" data="50-topic-full-lda_vis.html"></object>
+					</section>
+					<section>
+						<h5>Visualization for 100 topics</h5>
+						<object width=1200 height=900 type="text/html" data="100-topic-lda_vis.html"></object>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h3>Words to Vectors</h3>
+						<img width="900"  src="imgs/w2v.png" alt="Smiley face">
+					</section>
+					<section>
+						<h3>Words to Vectors</h3>
+						<img width="500"  src="imgs/word2vec-gender-relation.png" alt="Smiley face">
+						<p>v(King) - v(Man) + v(Woman) = v(Queen)</p>
+					</section>
+					<section>
+						<p align="Left"><font size="6">Using <b>gensim</b> to load GloVe already trained model: </font> </p>
+					    <pre width="100%" ><code class="python" data-trim contenteditable>
+							with open(glove_embedding_path, "rb") as lines:
+							  for line in lines:
+							    word = str(line.split()[0])
+								vec = np.array(list(map(float, line.split()[1:])))
+								w2v[word] = vec
+					    </code></pre>
+					    <p align="Left"><font size="6">A document representation is then just the average of all its words:</font></p>
+						<pre width="100%" ><code class="python" data-trim contenteditable>
+						doc_vec = np.array([np.mean([
+								w2v[w] for w in doc if w in w2v] or 
+								[np.zeros(dim)], axis=0)
+								])
+					    </code></pre>
+					    <span class="fragment">
+					    <p align="Left"><font size="6">Instead of averging we can also use <b>tf-idf</b> for smarter weights</font></p>
+					    </span>
+						
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>Matching expertise</h3>					
+						<ul>
+							<font size="6">
+							<li>Now we have a mapping from words space to a vector space.</li>
+							<li>By defining a proper distance metric we can use (approximate) <b>Nearest Neighbor</b> algoithm to find the closest vectors to new points. 
+							</li>
+							</font>
+							<span class="fragment">
+							<p style="margin-left:1em;"> 
+							<font size="5.5"><b>LDA</b>: Jansen-Shannon (to compute distance between probability distributions)</font>
+							</p>
+							<p style="margin-left:1em;"> 
+							<font size="5.5"><b>W2v</b>: Eulidian or Cosine distance (As we deal with actual vectors)</font>
+							</p>
+							</span>
+						</ul>
+					</section>
+					<section>
+						<font size="6">
+						<p align="Left">Training the Nearest Neighbor using <b>scikit-learn</b>:</p>
+						</font>
+					    <pre width="100%" ><code class="python" data-trim contenteditable>					    	
+					    	from sklearn.neighbors import NearestNeighbors
+					    	nbrs = NearestNeighbors(n_neighbors=20, 
+					    				algorithm='ball_tree', 
+					    				metric=distance_metric).fit(X)
+					    </code></pre>
+					    <font size="6">
+					    <p align="Left">Getting the most similiar documents to a new document:</p>
+					    </font>
+					    <pre width="100%" ><code class="python" data-trim contenteditable>					    	
+					    	q = model.transform(doc_list)
+    						distances, indices = nbrs.kneighbors(q)
+					    </code></pre>
+					</section>
+					<section>
+						<h4>Results for LDA</h4>
+						<font size="5.5">
+						<p> Closest authors to myself</p>
+						</font>
+						<img width="220" style="margin-bottom: 5em"  src="imgs/Hamed Ghasemieh.png" alt="Smiley face">
+						<img width="700"  src="imgs/Hamed Ghasemieh_lda_sim.png" alt="Smiley face">
+					</section>
+					<section>
+						<h4>Results for LDA</h4>
+						<font size="5.5">
+						<p> Closest authors to my supervisor</p>
+						</font>
+						<img width="220" style="margin-bottom: 5em"  src="imgs/Boudewijn R. Haverkort.png" alt="Smiley face">
+						<img width="700"  src="imgs/Boudewijn R. Haverkort_lda_sim.png" alt="Smiley face">
+					</section>
+					<section>
+						<h4>Results for w2v</h4>
+						<font size="5.5">
+						<p> Closest authors to myself</p>
+						</font>
+						<img width="220" style="margin-bottom: 5em"  src="imgs/Hamed Ghasemieh.png" alt="Smiley face">
+						<img width="700"  src="imgs/Hamed Ghasemieh_w2v_sim.png" alt="Smiley face">
+					</section>
+					<section>
+						<h4>Results for w2v</h4>
+						<font size="5.5">
+						<p> Closest authors to my supervisor</p>
+						</font>
+						<img width="220" style="margin-bottom: 5em"  src="imgs/Boudewijn R. Haverkort.png" alt="Smiley face">
+						<img width="700"  src="imgs/Boudewijn R. Haverkort_w2v_sim.png" alt="Smiley face">
+					</section>
+					<section>
+						<h3>Conclusion</h3>
+						<font size="6">
+						<ul>
+							<li>I found w2v more powerfull for the few cases I observed</li>
+							<li>gemsim LDA default parameters are tuned to output a very sparse feature vector for each document. </li>
+							<p style="margin-left: 1em">- in other words, it tries to assigne few topics to each document</p>
+							<li>A good hyperparameter search should take place!</li>
+						</ul>
+						</font>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>What else to do?</h3>
+						<font size="6">
+						<ul>
+							<li>Hyperparameter search for LDA (especially &alpha;)</li>
+							<li>Try higher dimensions for word2vec</li>
+							<li>Play with parameters of Nearest Neighbors</li>
+							<li>Try better weighting e.g. <b>tf-idf</b>, rather naive averaging of vectors for w2v</li>
+							<li>If we are looking for actual experts, KNN is not enough, we have to rank people based on <b>actual</b> level of expertise</li>
+							<li>Comming up with a test set for a good evaluation and comparison of proposed method</li>
+						</ul>
+						</font>
+
+					</section>
+					<section>
+						<p> Enhance the word2vec with K-means clustering?</p>
+						<img width="900"  src="imgs/k-means-w2v.png" alt="Smiley face">
+					</section>
+				</section>
+				<section>
+					<h2>The End</h2>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
