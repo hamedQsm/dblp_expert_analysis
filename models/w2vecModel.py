@@ -44,15 +44,6 @@ class Word2vecModel:
         X_mean_embeded = MeanEmbeddingVectorizer(self.w2v).transform(doc_list)
 
         return X_mean_embeded
-#
-# if __name__ == '__main__':
-#     w2v_model = Word2vecModel()
-#     w2v_model.initialize("../data/glove.6B/glove.6B.50d.txt")
-#
-#     author_df = pd.read_csv('../data/authors_processed.csv')
-#     doc_list = [t.split() for t in author_df['doc']]
-#
-#     w2v_model.transform(doc_list)
 
 
 

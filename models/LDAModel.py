@@ -18,6 +18,8 @@ class LDAModel:
         self.ldamodel = None
         self.num_topics = num_topics
         self.name = name
+        if not os.path.exists('{}/objects'.format(root_folder)):
+            os.mkdir('{}/objects'.format(root_folder))
         self.dic_path = '{}/objects/{}-dictionary.dict'.format(root_folder, name)
         self.corpus_path = '{}/objects/{}-corpus.mm'.format(root_folder, name)
         self.model_path = '{}/objects/{}-lda-model'.format(root_folder, name)
