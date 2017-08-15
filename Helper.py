@@ -40,7 +40,7 @@ class Helper:
         is_en = sum(is_en_arr) / float(len(is_en_arr)) > .5
         return is_en
 
-    def prepare_author_df(self, csv_file, min_num_pub=3, max_num_pub=100, data_portion=None):
+    def prepare_author_df(self, csv_file, root_folder, min_num_pub=3, max_num_pub=100, data_portion=None):
         '''
         reads the csv file, and for each author creates one doc captaining all papers titles concatenated 
         :param csv_file: csv file with each raw containnig one author and one title. 
@@ -76,9 +76,9 @@ class Helper:
         author_df['doc'] = author_df['doc'].apply(self.preprocess_text)
 
         if data_portion:
-            csv_name = '../data/{}-authors_processed.csv'.format(data_portion)
+            csv_name = '{}/data/{}-authors_processed.csv'.format(root_folder, data_portion)
         else:
-            csv_name = '../data/authors_processed.csv'
+            csv_name = '{}/data/authors_processed.csv'.format(root_folder)
         author_df.to_csv(csv_name, index=False)
 
 

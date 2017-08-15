@@ -12,15 +12,15 @@ import numpy as np
 
 # noinspection PyAttributeOutsideInit
 class LDAModel:
-    def __init__(self, num_topics, name):
+    def __init__(self, num_topics, name, root_folder):
         self.dictionary = None
         self.corpus = None
         self.ldamodel = None
         self.num_topics = num_topics
         self.name = name
-        self.dic_path = '../objects/{}-dictionary.dict'.format(name)
-        self.corpus_path = '../objects/{}-corpus.mm'.format(name)
-        self.model_path = '../objects/{}-lda-model'.format(name)
+        self.dic_path = '{}/objects/{}-dictionary.dict'.format(root_folder, name)
+        self.corpus_path = '{}/objects/{}-corpus.mm'.format(root_folder, name)
+        self.model_path = '{}/objects/{}-lda-model'.format(root_folder, name)
 
     def initialize(self, doc_list):
         '''
