@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>PMI presentation</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
 		<link rel="stylesheet" href="css/theme/solarized.css">
@@ -181,7 +181,7 @@
 				<section>
 					<section>
 						<h3>Latent Dirichlet Allocation</h3>
-						<P>Generative model</P>>
+						<P>Generative model</P>
 						<img width="1200"  src="imgs/gen-model.png" alt="Smiley face">
 					</section>
 					<section>
@@ -222,8 +222,9 @@
 						<p>Trasfering new document to topic space:</p>
 					    <pre width="100%" ><code class="python" data-trim contenteditable>					    	
 							topic_prob_vec = ldamodel[dictionary.doc2bow(doc)]
+							topic_vec = np.zeros(num_topics)
 							for (t_id, p) in topic_prob_vec:
-								topic_vec[i, t_id] = p
+								topic_vec[t_id] = p
 					    </code></pre>
 						
 					</section>
@@ -283,7 +284,7 @@
 							<font size="5.5"><b>LDA</b>: Jansen-Shannon (to compute distance between probability distributions)</font>
 							</p>
 							<p style="margin-left:1em;"> 
-							<font size="5.5"><b>W2v</b>: Eulidian or Cosine distance (As we deal with actual vectors)</font>
+							<font size="5.5"><b>w2v</b>: Eulidian or Cosine distance (As we deal with actual vectors)</font>
 							</p>
 							</span>
 						</ul>
@@ -355,7 +356,7 @@
 						<h3>What else to do?</h3>
 						<font size="6">
 						<ul>
-							<li>Hyperparameter search for LDA (especially &alpha;)</li>
+							<li>Hyperparameter search for LDA</li>
 							<li>Try higher dimensions for word2vec</li>
 							<li>Play with parameters of Nearest Neighbors</li>
 							<li>Try better weighting e.g. <b>tf-idf</b>, rather naive averaging of vectors for w2v</li>

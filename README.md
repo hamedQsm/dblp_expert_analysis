@@ -19,7 +19,7 @@ concatenated in one piece of text.
 The main class for training, loading and storing the LDA model.
 This also include function for transforming a new document to LDA topic space.
 
-### modles/w2vModel.py
+### models/w2vModel.py
 The main class for loading the already trained w2v model plus transferring new document to w2v space.
 
 ### assessments/assessModels.py
