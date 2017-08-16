@@ -5,9 +5,9 @@ import os
 import shutil
 import re
 
-class DblpXmlHandler:
 
-    def read_dblp_xml(self, dblp_xml_file, out_dir,  doc_per_csv = 1000, total_doc_to_read=5000, skip_doc_num=0):
+class DblpXmlHandler:
+    def read_dblp_xml(self, dblp_xml_file, out_dir, doc_per_csv=1000, total_doc_to_read=5000, skip_doc_num=0):
         '''
         This function efficiently read the dblp xml files and stores it as csv chunks.
          These csv files later can be read and merged into one pandas dataframe
@@ -82,14 +82,13 @@ class DblpXmlHandler:
                 del doc_dic['author']
                 doc_dic['author'] = []
 
-
             elem.clear()
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
 
         del context
 
-    def merge_csv_files(self, dir, file_num = None):
+    def merge_csv_files(self, dir, file_num=None):
         '''
         reads the already generated csv files and merge them into a final pandas dataframe
         :param dir: the path to csv files
@@ -141,7 +140,7 @@ class DblpXmlHandler:
             os.mkdir(csv_dir)
 
         print('Starting to read documents...')
-        print('Skipping ', skip_doc_num  ,' documents...')
+        print('Skipping ', skip_doc_num, ' documents...')
         self.read_dblp_xml(dblp_xml_file, csv_dir, total_doc_to_read=total_doc_to_read,
                            skip_doc_num=skip_doc_num, doc_per_csv=doc_per_csv)
         return self.merge_csv_files(csv_dir)

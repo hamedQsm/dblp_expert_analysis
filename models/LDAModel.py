@@ -115,6 +115,11 @@ class LDAModel:
             plt.savefig('Topic_'+ str(i))
 
     def load(self,  num_topics=100):
+        '''
+        Loads the trained lda model
+        :param num_topics: number of topics, for the already trained model.
+        :return: 
+        '''
         if os.path.exists(self.dic_path):
             self.dictionary = gensim.corpora.Dictionary.load(self.dic_path)
         else:
@@ -127,13 +132,22 @@ class LDAModel:
         self.num_topics = num_topics
 
     def preprocess_new_doc(self, word_list):
-
+        '''
+        preprocess the new document, which is a list of words, to the dictionary representation.
+        :param word_list: document. should be a list of words. 
+        :return: 
+        '''
         if not self.dictionary:
             self.dictionary = gensim.corpora.Dictionary.load(self.dic_path)
         transfered_to_dic = self.dictionary.doc2bow(word_list)
         return transfered_to_dic
 
     def extract_topics(self, word_list):
+        '''
+        retursn the list of topics of the given document.
+        :param word_list: document. should be a list of words.
+        :return: topics, sorted by level of relevance.
+        '''
         if not self.ldamodel:
             self.load()
         topics = self.ldamodel[self.preprocess_new_doc(word_list)]

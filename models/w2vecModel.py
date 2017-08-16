@@ -1,11 +1,5 @@
 import numpy as np
-import gensim
-from sklearn.pipeline import Pipeline
-from sklearn.cluster import KMeans
-import pickle
-import pandas as pd
-from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
+
 
 # TODO: try tf-idf as well
 class MeanEmbeddingVectorizer(object):
@@ -14,7 +8,7 @@ class MeanEmbeddingVectorizer(object):
         # if a text is empty we should return a vector of zeros
         # with the same dimensionality as all the other vectors
         self.dim = len(word2vec[next(iter(word2vec))])
-        print ('DIM: ', self.dim)
+        print('DIM: ', self.dim)
 
     def fit(self, X):
         return self
@@ -26,9 +20,13 @@ class MeanEmbeddingVectorizer(object):
         ])
 
 
-
 class Word2vecModel:
     def initialize(self, embedding_path):
+        '''
+        intitialize/loads the w2v model
+        :param embedding_path: path to the already trained GloVe model
+        :return: 
+        '''
         self.w2v = {}
         # At this moment I am using GLOVE as an already trained embedding.
         with open(embedding_path, "rb") as lines:
@@ -40,10 +38,12 @@ class Word2vecModel:
                 self.w2v[word] = vec
 
     def transform(self, doc_list):
-        print ('Obtaining the mean embeddings...')
+        '''
+        transforms a given document list to w2v space
+        :param doc_list: is a list of list, i.e. list of documents.
+        :return: 
+        '''
+        print('Obtaining the mean embeddings...')
         X_mean_embeded = MeanEmbeddingVectorizer(self.w2v).transform(doc_list)
 
         return X_mean_embeded
-
-
-
